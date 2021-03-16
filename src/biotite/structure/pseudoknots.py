@@ -129,7 +129,7 @@ def pseudoknots(base_pairs, scores=None, max_pseudoknot_order=None):
     # Make sure `base_pairs` has the same length as the score array
     if len(base_pairs) != len(scores):
         raise ValueError(
-            "'base_pair' and 'scores' must have the same shape"
+            "'base_pairs' and 'scores' must have the same shape"
         )
 
     # Split the base pairs in regions
