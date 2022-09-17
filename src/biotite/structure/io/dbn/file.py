@@ -30,15 +30,18 @@ class DBNFile(TextFile, MutableMapping):
         file._find_entries()
         return file
         
-    def __setitem__(self, header, seq_str, basepairs):
-        # TODO set basepairs
+    def __setitem__(self, header, payload):
+        # TODO set basepairs, payload is tuple sequence, structure
+        # TODO Check structure integrity with basepairs
+        # TODO Allow basepairs to be either ndarray or dot bracket
         if not isinstance(header, str):
             raise IndexError(
                 "'DBNFile' only supports header strings as keys"
             )
+        seq_str = payload[0]
         if not isinstance(seq_str, str):
             raise TypeError("'DBNFile' only supports sequence strings "
-                             "as values")
+                             "as second value")
         # Create lines for new header and sequence (with line breaks)
         new_lines = [">" + header.replace("\n","").strip()] + \
                     wrap_string(seq_str, width=self._chars_per_line)
@@ -59,16 +62,17 @@ class DBNFile(TextFile, MutableMapping):
             self.lines += new_lines
     
     def __getitem__(self, header):
+        # TODO Support 
         if not isinstance(header, str):
             raise IndexError(
-                "'FastaFile' only supports header strings as keys"
+                "'DBNFile' only supports header strings as keys"
             )
         start, stop = self._entries[header]
         # Concatenate sequence string from following lines
         seq_string = "".join(
             [line.strip() for line in self.lines[start+1 : stop]]
         )
-        return seq_string
+        return payload
     
     def __delitem__(self, header):
         start, stop = self._entries[header]
