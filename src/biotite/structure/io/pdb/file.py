@@ -76,6 +76,15 @@ class PDBFile(TextFile):
     >>> file.set_structure(array_stack_mod)
     >>> file.write(os.path.join(path_to_directory, "1l2y_mod.pdb"))
     """
+    @classmethod
+    def read(cls, file):
+        file = super().read(file)
+        # Pad lines with whitespace if lines are shorter
+        # than the required 80 characters
+        file.lines = [line.ljust(80) for line in file.lines]
+        return file
+
+
     def get_model_count(self):
         """
         Get the number of models contained in the PDB file.
@@ -349,7 +358,7 @@ class PDBFile(TextFile):
         # i is index in array, line_i is line index
         for i, line_i in enumerate(annot_i):
             line = self.lines[line_i]
-            chain_id[i] = line[_chain_id].upper().strip()
+            chain_id[i] = line[_chain_id].strip()
             res_id[i] = decode_hybrid36(line[_res_id])
             ins_code[i] = line[_ins_code].strip()
             res_name[i] = line[_res_name].strip()
@@ -358,7 +367,11 @@ class PDBFile(TextFile):
             element[i] = line[_element].strip()
             altloc_id[i] = line[_alt_loc]
             atom_id_raw[i] = line[_atom_id]
-            charge_raw[i] = line[_charge][::-1]  # turn "1-" into "-1"
+            # turn "1-" into "-1", if necessary
+            if line[_charge][0] in "+-":
+                charge_raw[i] = line[_charge]
+            else:
+                charge_raw[i] = line[_charge][::-1] 
             occupancy[i] = float(line[_occupancy].strip())
             b_factor[i] = float(line[_temp_f].strip())
         
@@ -685,8 +698,13 @@ class PDBFile(TextFile):
         
         # Mapping from atom ids to indices in an AtomArray
         atom_id_to_index = np.zeros(atom_ids[-1]+1, dtype=int)
-        for i, id in enumerate(atom_ids):
-           atom_id_to_index[id] = i
+        try:
+            for i, id in enumerate(atom_ids):
+                atom_id_to_index[id] = i
+        except IndexError as e:
+            raise InvalidFileError(
+                "Atom IDs are not strictly increasing"
+            ) from e
 
         bonds = []
         for line in conect_lines:
